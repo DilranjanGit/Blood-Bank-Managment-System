@@ -1,3 +1,4 @@
+using BloodBank.Api.DTOs;
 using BloodBank.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,9 +22,24 @@ public class UserRepository : IUserRepository
         return await _context.Users.FindAsync(id);
     }
 
-    public async Task AddUser(User user)
+    public async Task<User> GetUserByEmail(string email)
     {
-        _context.Users.Add(user);
+        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<User> AddUser(CreateUserDto user)
+    {
+        var userEntity = new User
+        {
+            FullName = user.FullName,
+            Email = user.Email,
+            PasswordHash = user.Password, // Note: In a real application, you should hash the password before storing it
+            Phone = user.Phone,
+            RoleId = user.RoleId
+        };
+
+        _context.Users.Add(userEntity);
         await _context.SaveChangesAsync();
+        return userEntity;
     }
 }
