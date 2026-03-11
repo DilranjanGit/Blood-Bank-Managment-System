@@ -1,8 +1,23 @@
+using AutoMapper;
+using BloodBank.Api.Models;
+using BloodBank.Api.Repositories;
+using BloodBank.Api.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<BloodBankContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("BloodBankDb")));
+builder.Services.AddAutoMapper(typeof(Program));
+//Repositories Registration
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDonorRepository, DonorRepository>();
+
+//Services Registration
+builder.Services.AddScoped<IDonorService, DonorService>();
 
 var app = builder.Build();
 
@@ -12,7 +27,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 var summaries = new[]
 {
