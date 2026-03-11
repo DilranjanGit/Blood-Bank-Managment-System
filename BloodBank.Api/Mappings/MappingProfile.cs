@@ -11,6 +11,13 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        // Users
+        CreateMap<User, UserDto>()
+        .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.PasswordHash)) 
+        .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
+        CreateMap<CreateUserDto, User>();
+        CreateMap<LoginDto, User>();
+        // Donors
         CreateMap<Donor, DonorDto>();
         CreateMap<CreateDonorDto, Donor>();
 

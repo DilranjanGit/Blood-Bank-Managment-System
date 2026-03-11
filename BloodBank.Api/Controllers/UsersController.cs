@@ -10,10 +10,12 @@ namespace BloodBank.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _service;
+    private readonly JwtService _jwtService;
 
-    public UsersController(IUserService service)
+    public UsersController(IUserService service, JwtService jwtService)
     {
         _service = service;
+        _jwtService = jwtService;
     }
 
     [HttpGet]
@@ -42,5 +44,19 @@ public class UsersController : ControllerBase
     {
         var user = await _service.AddUser(dto);
         return CreatedAtAction(nameof(GetUserByEmail), new { email = user.Email }, user);
-    }   
+    }  
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginDto dto)
+    {
+        var user = await _service.GetUserByEmail(dto.Email);
+        if (user == null || user.Password != dto.Password)
+        {
+            return Unauthorized();
+        }
+
+        var token = _jwtService.GenerateToken(user.UserId, user.Role);
+        return Ok(new { Token = token,Role = user.Role });
+    }
+
 }

@@ -14,27 +14,27 @@ public class UserService : IUserService
         _userRepository = userRepository;
         _mapper = mapper;
     }
-    public Task<CreateUserDto> AddUser(CreateUserDto user)
+    public Task<UserDto> AddUser(CreateUserDto user)
     {
          var addedUser = _userRepository.AddUser(user).Result;
-         return Task.FromResult(_mapper.Map<CreateUserDto>(addedUser));
+         return Task.FromResult(_mapper.Map<UserDto>(addedUser));
     }
 
-    public Task<IEnumerable<CreateUserDto>> GetAllUsers()
+    public Task<IEnumerable<UserDto>> GetAllUsers()
     {
         var users = _userRepository.GetAllUsers().Result;
-        return Task.FromResult(_mapper.Map<IEnumerable<CreateUserDto>>(users));
+        return Task.FromResult(_mapper.Map<IEnumerable<UserDto>>(users));
     }
 
-    public Task<CreateUserDto> GetUserByEmail(string email)
+    public Task<UserDto> GetUserByEmail(string email)
     {
         var user = _userRepository.GetUserByEmail(email).Result;
-        return Task.FromResult(_mapper.Map<CreateUserDto>(user));
+        return Task.FromResult(_mapper.Map<UserDto>(user));
        }
 
-    public Task<CreateUserDto> GetUserById(int id)
+    public Task<UserDto> GetUserById(int id)
     {
         var user = _userRepository.GetUserById(id).Result;
-        return Task.FromResult(_mapper.Map<CreateUserDto>(user));
+        return Task.FromResult(_mapper.Map<UserDto>(user));
     }
 }

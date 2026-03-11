@@ -1,10 +1,14 @@
+using System.Text;
 using AutoMapper;
 using BloodBank.Api.Mappings;
 using BloodBank.Api.Models;
 using BloodBank.Api.Repositories;
 using BloodBank.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Microsoft.Extensions.DependencyInjection;
 //using Scalar.AspNetCore;
 
 
@@ -17,7 +21,29 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<BloodBankContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BloodBankDb")));
 
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+//Jwt Authentication Configuration
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(option=>
+    {
+        option.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+
+// This automatically finds all your Mapping Profiles
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
+
+
 //Repositories Registration
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDonorRepository, DonorRepository>();
@@ -27,6 +53,8 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 
 //Services Registration
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDonorService, DonorService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
