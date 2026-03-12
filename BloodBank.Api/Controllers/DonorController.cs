@@ -1,12 +1,14 @@
 using BloodBank.Api.DTOs;
 using BloodBank.Api.Models;
 using BloodBank.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BloodBank.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Donor")]
 public class DonorController : ControllerBase
 {
     private readonly IDonorService _service;

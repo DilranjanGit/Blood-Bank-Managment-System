@@ -35,6 +35,8 @@ public partial class BloodBankContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=LIN-5CD5334YCF;Database=BBMS;User Id=sa;Password=Password@123;TrustServerCertificate=True;");
@@ -255,6 +257,27 @@ public partial class BloodBankContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Users_Roles");
         });
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.HasKey(e => e.ResetTokenId).HasName("PK__Password__AF49A7B829C9AB32");
+
+            entity.HasIndex(e => e.TokenHash, "IX_PasswordResetTokens_TokenHash");
+
+            entity.HasIndex(e => new { e.UserId, e.ExpiresAt }, "IX_PasswordResetTokens_UserId_ExpiresAt");
+
+            entity.Property(e => e.RequestedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RequestedIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+            entity.Property(e => e.RequestedUserAgent).HasMaxLength(256);
+            entity.Property(e => e.TokenHash).HasMaxLength(32);
+            entity.Property(e => e.TokenSalt).HasMaxLength(16);
+            entity.Property(e => e.UsedIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+            entity.Property(e => e.UsedUserAgent).HasMaxLength(256);
+        });
+        
 
         OnModelCreatingPartial(modelBuilder);
     }

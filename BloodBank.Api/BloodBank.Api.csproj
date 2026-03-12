@@ -10,6 +10,7 @@
   <!-- Keep HealthChecks in the 9.x line -->
   <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
   <PackageReference Include="AutoMapper" Version="16.1.0" />
+  <PackageReference Include="MailKit" Version="4.15.1" />
   <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
 
   <!-- Built-in OpenAPI for .NET 9 -->

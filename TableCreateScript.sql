@@ -138,5 +138,27 @@ CREATE TABLE Notifications (
         REFERENCES Users(UserId)
 );
 
-*/
 
+
+CREATE TABLE PasswordResetTokens (
+    ResetTokenId      INT IDENTITY(1,1) PRIMARY KEY,
+    UserId            INT NOT NULL,
+    TokenHash         VARBINARY(32) NOT NULL,     -- SHA-256
+    TokenSalt         VARBINARY(16) NOT NULL,     -- per-token salt (optional for extra hardness)
+    ExpiresAt         DATETIME2 NOT NULL,
+    UsedAt            DATETIME2 NULL,
+    RequestedAt       DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    RequestedIp       VARCHAR(45) NULL,
+    RequestedUserAgent NVARCHAR(256) NULL,
+    UsedIp            VARCHAR(45) NULL,
+    UsedUserAgent     NVARCHAR(256) NULL,
+
+    CONSTRAINT FK_PasswordResetTokens_Users FOREIGN KEY (UserId)
+        REFERENCES Users(UserId),
+
+    -- You may want a nonclustered index for quick lookups on TokenHash+TokenSalt
+    INDEX IX_PasswordResetTokens_TokenHash (TokenHash),
+    INDEX IX_PasswordResetTokens_UserId_ExpiresAt (UserId, ExpiresAt)
+);
+
+*/

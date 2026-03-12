@@ -2,6 +2,7 @@ using AutoMapper;
 using BloodBank.Api.Models;
 using BloodBank.Api.DTOs;
 using BloodBank.Api.Repositories;
+using BloodBank.Api.Security;
 
 namespace BloodBank.Api.Services;
 
@@ -14,27 +15,45 @@ public class UserService : IUserService
         _userRepository = userRepository;
         _mapper = mapper;
     }
-    public Task<UserDto> AddUser(CreateUserDto user)
+    public async Task<UserDto> AddUser(CreateUserDto user)
     {
-         var addedUser = _userRepository.AddUser(user).Result;
-         return Task.FromResult(_mapper.Map<UserDto>(addedUser));
+        // Check email uniqueness
+        var exists = await _userRepository.GetUserByEmail(user.Email) != null;
+        if (exists) throw new InvalidOperationException("Email already registered.");
+
+        //Role validation (Admin/Staf/Donor)
+        var role = await _userRepository.GetRoleById(user.RoleId);
+        if (role == null ) throw new ArgumentException("Invalid role.");
+        
+        // Hash password
+        var hashed = PasswordHasher.HashPassword(user.Password);
+        var userEntity = new User
+        {
+            FullName = user.FullName,
+            Email = user.Email,
+            PasswordHash = hashed,
+            Phone = user.Phone,
+            RoleId = user.RoleId
+        };
+         var addedUser = await _userRepository.AddUser(userEntity);
+         return _mapper.Map<UserDto>(addedUser);
     }
 
-    public Task<IEnumerable<UserDto>> GetAllUsers()
+    public async Task<IEnumerable<UserDto>> GetAllUsers()
     {
-        var users = _userRepository.GetAllUsers().Result;
-        return Task.FromResult(_mapper.Map<IEnumerable<UserDto>>(users));
+        var users = await _userRepository.GetAllUsers();
+        return _mapper.Map<IEnumerable<UserDto>>(users);
     }
 
-    public Task<UserDto> GetUserByEmail(string email)
+    public async Task<UserDto> GetUserByEmail(string email)
     {
-        var user = _userRepository.GetUserByEmail(email).Result;
-        return Task.FromResult(_mapper.Map<UserDto>(user));
+        var user = await _userRepository.GetUserByEmail(email);
+        return _mapper.Map<UserDto>(user);
        }
 
-    public Task<UserDto> GetUserById(int id)
+    public async Task<UserDto> GetUserById(int id)
     {
-        var user = _userRepository.GetUserById(id).Result;
-        return Task.FromResult(_mapper.Map<UserDto>(user));
+        var user = await _userRepository.GetUserById(id);
+        return _mapper.Map<UserDto>(user)   ;
     }
 }

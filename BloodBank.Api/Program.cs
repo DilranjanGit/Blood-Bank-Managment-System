@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 //using Scalar.AspNetCore;
 
 
@@ -16,7 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<BloodBankContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BloodBankDb")));
@@ -59,6 +58,9 @@ builder.Services.AddScoped<IDonorService, DonorService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddCors(options =>
 {
@@ -70,8 +72,34 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
-builder.Services.AddControllers();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info.Title = "Job Portal API";
+        
+        // Define the Security Scheme (Bearer Token)
+        var securitySchemeName = "Bearer";
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes.Add(securitySchemeName, new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Enter your JWT token here."
+        });
 
+        // Apply globally to all operations (Optional)
+        document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = securitySchemeName } }] = Array.Empty<string>()
+        });
+
+        return Task.CompletedTask;
+    });
+});
+ 
+builder.Services.AddControllers();
 var app = builder.Build();
 
 
