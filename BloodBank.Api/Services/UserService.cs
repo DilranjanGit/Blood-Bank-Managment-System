@@ -21,7 +21,7 @@ public class UserService : IUserService
         var exists = await _userRepository.GetUserByEmail(user.Email) != null;
         if (exists) throw new InvalidOperationException("Email already registered.");
 
-        //Role validation (Admin/Staf/Donor)
+        //Role validation (Administrator/Staf/Donor)
         var role = await _userRepository.GetRoleById(user.RoleId);
         if (role == null ) throw new ArgumentException("Invalid role.");
         

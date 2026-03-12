@@ -3,8 +3,10 @@ using BloodBank.Api.Services;
 using BloodBank.Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using BloodBank.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BloodBank.Api.Controllers;
+
 
 [ApiController]
 [Route("api/[controller]")]
@@ -25,6 +27,7 @@ public class UsersController : ControllerBase
         _passwordResetService = passwordResetService;
     }
 
+    [Authorize(Roles = "Administrator,Staff")]
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
@@ -32,6 +35,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Administrator,Staff")]
     public async Task<IActionResult> GetUser(int id)
     {
         var user = await _service.GetUserById(id);
@@ -96,5 +100,5 @@ public class UsersController : ControllerBase
         }
         return Ok(new { message = "Password has been reset successfully." });
     }
-
+    
 }

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BloodBank.Api.Controllers;
 
+[Authorize(Roles = "Administrator,Staff")]
 [ApiController]
 [Route("api/[controller]")]
 public class InventoryController : ControllerBase

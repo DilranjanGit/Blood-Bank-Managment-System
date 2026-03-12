@@ -16,6 +16,7 @@ public class PaymentsController : ControllerBase
     private readonly IPaymentService _service;
     public PaymentsController(IPaymentService service) => _service = service;
 
+    [Authorize(Roles = "Administrator,Staff,Donor")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePaymentDto dto)
     {
@@ -35,6 +36,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles ="Administrator,Staff,Donor")]
     public async Task<IActionResult> GetById(int id)
     {
         var p = await _service.GetByIdAsync(id);
@@ -42,10 +44,12 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet("order/{orderId:int}")]
+    [Authorize(Roles ="Administrator,Staff,Donor")]
     public async Task<IActionResult> GetByOrder(int orderId) =>
         Ok(await _service.GetByOrderAsync(orderId));
 
     [HttpPut("{id:int}/status")]
+    [Authorize(Roles = "Administrator,Staff")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdatePaymentStatusDto dto)
     {
         var p = await _service.UpdateStatusAsync(id, dto);

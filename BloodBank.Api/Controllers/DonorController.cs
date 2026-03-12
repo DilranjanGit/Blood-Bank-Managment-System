@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BloodBank.Api.Controllers;
 
+[Authorize(Roles = "Administrator,Staff")]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Donor")]
 public class DonorController : ControllerBase
 {
     private readonly IDonorService _service;
