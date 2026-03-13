@@ -3,6 +3,7 @@ using BloodBank.Api.Models;
 using BloodBank.Api.Repositories;
 using Microsoft.EntityFrameworkCore;
 using BloodBank.Api.DTOs.Orders;
+using System.Security.Claims;
 
 namespace BloodBank.Api.Services;
 
@@ -12,20 +13,23 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orders;
     private readonly IInventoryQueries _inventory;
     private readonly IMapper _mapper;
-
-    public OrderService(BloodBankContext ctx, IOrderRepository orders, IInventoryQueries inventory, IMapper mapper)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private int _currentUserId => int.Parse(_httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+    public OrderService(BloodBankContext ctx, IOrderRepository orders, IInventoryQueries inventory, IMapper mapper, IHttpContextAccessor httpContextAccessor)
     {
         _ctx = ctx;
         _orders = orders;
         _inventory = inventory;
         _mapper = mapper;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<OrderDto> PlaceOrderAsync(CreateOrderDto dto)
     {
         // Transaction ensures consistency between Orders, Inventory, and History
+        int _currentUserId =int.Parse(_httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
         using var tx = await _ctx.Database.BeginTransactionAsync();
-
+        var orderNumber = _ctx.Orders.OrderByDescending(o => o.OrderId).Select(o => o.OrderNumber).FirstOrDefault();    
         var stock = await _inventory.GetInventoryAsync(dto.ProductId, dto.BloodGroup);
         if (stock == null || stock.QuantityAvailable < dto.Quantity)
             throw new InvalidOperationException("Insufficient inventory for the requested product/blood group.");
@@ -37,7 +41,9 @@ public class OrderService : IOrderService
 
         // Create order
         var order = _mapper.Map<Order>(dto);
+        order.OrderNumber = GenerateRandomOrder(orderNumber);
         order.OrderStatus = "Pending"; // or "AwaitingPayment"
+        order.UserId = _currentUserId; // Assuming UserId is passed in DTO or obtained from context
         order.CreatedAt = DateTime.UtcNow;
 
         _ctx.Orders.Add(order);
@@ -48,7 +54,7 @@ public class OrderService : IOrderService
         {
             OrderId = order.OrderId,
             Status = order.OrderStatus,
-            UpdatedBy = dto.UserId,
+            UpdatedBy = _currentUserId,
             UpdatedAt = DateTime.UtcNow
         };
         _ctx.OrderStatusHistories.Add(history);
@@ -77,13 +83,16 @@ public class OrderService : IOrderService
         return entity == null ? null : _mapper.Map<OrderDto>(entity);
     }
 
-    public async Task<OrderDto> UpdateDeliveryAsync(int orderId, UpdateOrderDeliveryDto dto, int updatedBy)
+    public async Task<OrderDto> UpdateDeliveryAsync(int orderId, UpdateOrderDeliveryDto dto)
     {
         var order = await _orders.GetByIdAsync(orderId);
         if (order == null) return null;
 
         order.DeliveryDate = dto.DeliveryDate;
-        order.DeliveryAddress = dto.DeliveryAddress;
+        if(!string.IsNullOrEmpty(dto.DeliveryAddress))
+        {
+            order.DeliveryAddress = dto.DeliveryAddress;
+        }
 
         await _orders.UpdateAsync(order);
 
@@ -91,7 +100,7 @@ public class OrderService : IOrderService
         {
             OrderId = orderId,
             Status = $"DeliveryUpdated",
-            UpdatedBy = updatedBy,
+            UpdatedBy = _currentUserId,
             UpdatedAt = DateTime.UtcNow
         });
 
@@ -125,7 +134,7 @@ public class OrderService : IOrderService
         {
             OrderId = orderId,
             Status = dto.Status,
-            UpdatedBy = dto.UpdatedBy,
+            UpdatedBy = _currentUserId,
             UpdatedAt = DateTime.UtcNow
         });
 
@@ -133,7 +142,17 @@ public class OrderService : IOrderService
         return _mapper.Map<OrderDto>(order);
     }
 
-    public Task<bool> CancelAsync(int orderId, int updatedBy) =>
-        UpdateStatusAsync(orderId, new UpdateOrderStatusDto { Status = "Cancelled", UpdatedBy = updatedBy })
+    public Task<bool> CancelAsync(int orderId) =>
+        UpdateStatusAsync(orderId, new UpdateOrderStatusDto { Status = "Cancelled", UpdatedBy = _currentUserId })
         .ContinueWith(t => t.Result != null);
+    public string GenerateRandomOrder(string lastOrderNumber = null)
+    {
+        if(lastOrderNumber == null)
+        {
+           return "DON-00000001";
+        }    
+        string code =(int.Parse(lastOrderNumber.Split('-')[1]) + 1).ToString("D8");
+        return $"DON-{code}";
+    }
+
 }

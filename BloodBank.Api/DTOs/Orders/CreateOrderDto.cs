@@ -4,7 +4,8 @@ namespace BloodBank.Api.DTOs.Orders;
 
 public class CreateOrderDto
 {
-    public int UserId { get; set; }
+   // public int UserId { get; set; }
+    //public string OrderNumber { get; set; }
     public int ProductId { get; set; }
     public string BloodGroup { get; set; } // e.g., "A+", "O-"
     public int Quantity { get; set; }

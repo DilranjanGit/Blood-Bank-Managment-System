@@ -50,9 +50,9 @@ public class OrdersController : ControllerBase
 
     [HttpPut("{id:int}/delivery")]
     [Authorize(Roles = "Administrator,Staff")]
-    public async Task<IActionResult> UpdateDelivery(int id, [FromBody] UpdateOrderDeliveryDto dto, [FromQuery] int updatedBy)
+    public async Task<IActionResult> UpdateDelivery(int id, [FromBody] UpdateOrderDeliveryDto dto)
     {
-        var o = await _service.UpdateDeliveryAsync(id, dto, updatedBy);
+        var o = await _service.UpdateDeliveryAsync(id, dto);
         return o == null ? NotFound() : Ok(o);
     }
 
@@ -66,9 +66,9 @@ public class OrdersController : ControllerBase
 
     [HttpDelete("{id:int}")]    
     [Authorize(Roles = "Administrator,Staff")]
-    public async Task<IActionResult> Cancel(int id, [FromQuery] int updatedBy)
+    public async Task<IActionResult> Cancel(int id)
     {
-        var ok = await _service.CancelAsync(id, updatedBy);
+        var ok = await _service.CancelAsync(id);
         return ok ? NoContent() : NotFound();
     }
 }

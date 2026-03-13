@@ -9,10 +9,12 @@ namespace BloodBank.Api.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IDonorService _donorService;
     private readonly IMapper _mapper;
-    public UserService(IUserRepository userRepository, IMapper mapper)
+    public UserService(IUserRepository userRepository, IDonorService donorService, IMapper mapper)
     {
         _userRepository = userRepository;
+        _donorService = donorService;
         _mapper = mapper;
     }
     public async Task<UserDto> AddUser(CreateUserDto user)
@@ -25,6 +27,14 @@ public class UserService : IUserService
         var role = await _userRepository.GetRoleById(user.RoleId);
         if (role == null ) throw new ArgumentException("Invalid role.");
         
+        if(role.RoleName == "Donor")
+        {
+            // Validate donor-specific fields
+            if (string.IsNullOrWhiteSpace(user.BloodGroup)) throw new ArgumentException("Blood group is required for donors.");
+            if (user.Age < 18 || user.Age > 65) throw new ArgumentException("Donor age must be between 18 and 65.");
+
+            
+        }
         // Hash password
         var hashed = PasswordHasher.HashPassword(user.Password);
         var userEntity = new User
@@ -36,6 +46,20 @@ public class UserService : IUserService
             RoleId = user.RoleId
         };
          var addedUser = await _userRepository.AddUser(userEntity);
+        if(addedUser == null) throw new Exception("Failed to create user.");
+        if(role.RoleName == "Donor")
+        {
+            // add donor record
+            var donor = new CreateDonorDto
+            {
+                UserId = addedUser.UserId, 
+                BloodGroup = user.BloodGroup,
+                Age = user.Age,
+                Gender = user.Gender,
+                Address = user.Address
+            };
+            await _donorService.CreateDonor(donor);
+        }
          return _mapper.Map<UserDto>(addedUser);
     }
 

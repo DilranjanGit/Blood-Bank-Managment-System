@@ -4,6 +4,7 @@ using BloodBank.Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using BloodBank.Api.Security;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace BloodBank.Api.Controllers;
 
@@ -34,6 +35,26 @@ public class UsersController : ControllerBase
         return Ok(await _service.GetAllUsers());
     }
 
+    [HttpGet("profile")]
+    [Authorize] // Critical: Middleware won't populate User without this
+    public IActionResult GetProfile()
+    {
+    // Common standard claims
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var role = User.FindFirstValue(ClaimTypes.Role);
+    var user = _service.GetUserById(int.Parse(userId ?? "0")).Result;
+    
+    var profile = new
+    {
+        UserId = userId,
+        FullName = user?.FullName ?? "unknown",
+        Email = user?.Email ?? "unknown",
+        PhoneNumber = user?.Phone ?? "unknown",
+        Role = role ?? "unknown"
+    };
+    return Ok(profile);
+    }
+
     [HttpGet("{id}")]
     [Authorize(Roles = "Administrator,Staff")]
     public async Task<IActionResult> GetUser(int id)
@@ -43,6 +64,7 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
     [HttpGet("email/{email}")]
+    [Authorize(Roles = "Administrator,Staff")]
     public async Task<IActionResult> GetUserByEmail(string email)
     {
         var user = await _service.GetUserByEmail(email);

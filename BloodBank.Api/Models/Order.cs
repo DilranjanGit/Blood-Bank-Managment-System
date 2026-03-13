@@ -6,7 +6,8 @@ namespace BloodBank.Api.Models;
 public partial class Order
 {
     public int OrderId { get; set; }
-
+    
+    public string OrderNumber { get; set; }
     public int UserId { get; set; }
 
     public int ProductId { get; set; }
